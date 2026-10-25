@@ -1,0 +1,7 @@
+import { configureStore, createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { sampleProperties } from "./data/properties.js";
+const read=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key))??fallback}catch{return fallback}};
+export const loadProperties=createAsyncThunk("properties/load",async()=>{await new Promise(r=>setTimeout(r,350));const saved=read("propertyflow-properties",null);const items=Array.isArray(saved)&&saved.length?saved:sampleProperties;localStorage.setItem("propertyflow-properties",JSON.stringify(items));return items});
+const slice=createSlice({name:"properties",initialState:{items:[],status:"idle",error:null,wishlist:read("propertyflow-wishlist",[])},reducers:{addProperty(s,a){s.items.unshift(a.payload);localStorage.setItem("propertyflow-properties",JSON.stringify(s.items))},toggleWishlist(s,a){s.wishlist=s.wishlist.includes(a.payload)?s.wishlist.filter(x=>x!==a.payload):[...s.wishlist,a.payload];localStorage.setItem("propertyflow-wishlist",JSON.stringify(s.wishlist))}},extraReducers:b=>b.addCase(loadProperties.pending,s=>{s.status="loading";s.error=null}).addCase(loadProperties.fulfilled,(s,a)=>{s.status="succeeded";s.items=a.payload}).addCase(loadProperties.rejected,(s,a)=>{s.status="failed";s.error=a.error.message||"Could not load properties."})});
+export const {addProperty,toggleWishlist}=slice.actions;
+export const store=configureStore({reducer:{properties:slice.reducer}});
